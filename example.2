@@ -1,0 +1,96 @@
+
+pool star_x 65536 float
+pool star_y 65536 float
+
+S	float star_x[65536];
+S	float star_y[65536];
+
+pool rng_state 1 uint32_t
+
+S	uint32_t rng_state[1];
+
+
+fn rng_stateless
+lit A 48271UL
+lit B 2147483647UL
+mul A a a 
+mod a B a
+end
+
+S	void rng_stateless(uint64_t *a) {
+S		uint64_t A;
+S		A = 48271UL;
+S		uint64_t B;
+S		B = 2147483647UL;
+S		(*a) = (*a) * A;
+S		(*a) = B % (*a);
+S	}
+
+
+fn rng
+fetch rng_state A
+rng_stateless A
+mov A a
+store rng_state a
+end
+
+S	void rng(uint64_t *a) {
+S		uint64_t A;
+S		A = rng_state[0];
+S		rng_stateless(&A);
+S		(*a) = A;
+S		rng_state[0] = (*a);
+S	}
+
+fn frng
+type a float
+rng A
+mov A a
+end
+
+
+S	void frng (float *a) {
+S		uint64_t A;
+S		rng(&A);
+S		(*a) = A;
+S	}
+
+
+fn create
+type A float
+frng A
+store star_x A a
+frng A
+store star_y A a
+inc a
+lt a b z
+end
+
+S	void create(uint64_t *a, uint64_t *b, uint64_t *z) {
+S		float A;
+S		frng(&A);
+S		star_x[*a] = A;	
+S		frng(&A);
+S		star_y[*a] = A;	
+S		*a++;
+S		(*z) = *a < *b;
+S	}
+
+
+
+fn populate
+lit A 0
+size star_x B
+loop Z create A B Z
+end
+
+
+S	void populate(void) {
+S		uint64_t A;
+S		uint64_t B;
+S		uint64_t Z;
+S		A = 0;
+S		B = star_x_size;
+S		for(Z=0;Z==0;) create(&A, &B, &Z);
+S	}
+
