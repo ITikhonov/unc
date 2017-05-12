@@ -12,13 +12,59 @@ S.c_op = {}
 
 
 def Clit(op,r,v):
-	s='{}[0]={};'.format(r,v)
+	s='\t{}[0]={};\n'.format(r,v)
 	c_output(s)
 
 
 def Csize(op,pool,r):
-	size=S.pool[pool]
-	s='{}[0]={};'.format(r,size)
+	size=S.pool[pool].size
+	s='\t{}[0]={};\n'.format(r,size)
+	c_output(s)
+
+def Cloop(op,r):
+	s='\tfor({}=0;{}==0;) '.format(r,r)
+	c_output(s)
+
+def Cfncall(op, func, *args):
+	rs=[]
+	for r in args:
+		s='{}[0]'.format(r)
+		rs.append(s)
+
+	sa=','.join(rs)
+	s='\t{}({});\n'.format(func,sa)
+	c_output(s)
+
+def Cmul(op,a,b,r):
+	s='\t{}[0]={}[0]*{}[0];\n'.format(r,a,b)
+	c_output(s)
+
+def Cmod(op,a,b,r):
+	s='\t{}[0]={}[0]%{}[0];\n'.format(r,a,b)
+	c_output(s)
+
+def Cinc(op,r):
+	s='\t{}[0]++;\n'.format(r)
+	c_output(s)
+
+def Clt(op,a,b,r):
+	s='\t{}[0]={}[0]<{}[0];\n'.format(r,a,b)
+	c_output(s)
+
+def Cmov(op,s,d):
+	s='\t{}[0]={}[0];\n'.format(d,s)
+	c_output(s)
+
+def Cstorei(op,name,r,i):
+	s='\t{}[{}[0]]={}[0];\n'.format(name,i,r)
+	c_output(s)
+
+def Cstore(op,name,r):
+	s='\t{}[0]={}[0];\n'.format(name,r)
+	c_output(s)
+
+def Cfetch(op,name,r):
+	s='\t{}[0]={}[0];\n'.format(r,name)
 	c_output(s)
 
 
@@ -228,7 +274,7 @@ def c_decl_args(fn):
 def c_decl_locals(fn):
 	for p in sorted(fn.locals):
 		type = fn.types.get(p,'uint64_t')
-		c_output('{} {}[1];\n'.format(type,p))
+		c_output('\t{} {}[1];\n'.format(type,p))
 
 
 def c_decl_body(fn):
