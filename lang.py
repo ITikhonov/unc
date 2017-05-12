@@ -245,12 +245,12 @@ def c_decl_body(fn):
 
 		S.c_current = fn
 		try:
-			ret = apply(f,op)
-			if ret is not None:
-				i=
+			apply(f,op)
 		except:
 			print 'Error at:',op
 			raise
+
+		S.c_current_i+=1
 		
 
 def c_declarations():
