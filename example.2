@@ -63,6 +63,7 @@ frng A
 storei star_y A a
 inc a
 lt a b z
+c printf("CR %llu %llu %llu\n", a[0], b[0], z[0]);
 end
 
 S	void create(uint64_t *a, uint64_t *b, uint64_t *z) {
@@ -92,4 +93,26 @@ S		A = 0;
 S		B = star_x_size;
 S		for(Z=0;Z==0;) create(&A, &B, &Z);
 S	}
+
+
+fn dump
+lit A 0
+size star_x B
+loop Z dumpone A B Z
+end
+
+
+fn dumpone
+type X float
+type Y float
+fetch star_x X
+fetch star_y Y
+c printf("%0.2f %0.2f\n", *X, *Y);
+inc a
+lt a b z
+end
+
+
+pro #include <stdio.h>
+anx int main() { populate(); dump(); }
 

@@ -9,6 +9,14 @@ S.at = ''
 S.pool = {}
 S.fn = {}
 S.c_op = {}
+S.annex = O()
+S.annex.body=[]
+S.pro = O()
+S.pro.body=[]
+
+
+def Cc(op, line):
+	c_output(line+'\n')
 
 
 def Clit(op,r,v):
@@ -22,13 +30,13 @@ def Csize(op,pool,r):
 	c_output(s)
 
 def Cloop(op,r):
-	s='\tfor({}=0;{}==0;) '.format(r,r)
+	s='\tfor({}[0]=1;{}[0];) '.format(r,r)
 	c_output(s)
 
 def Cfncall(op, func, *args):
 	rs=[]
 	for r in args:
-		s='{}[0]'.format(r)
+		s='{}'.format(r)
 		rs.append(s)
 
 	sa=','.join(rs)
@@ -88,6 +96,18 @@ def Wfn():
 
 	S.current=p
 	S.fn[p.name]=p
+
+def Wc():
+	line, S.source=S.source.split('\n',1)
+	append('c',line)
+
+def Wanx():
+	line, S.source=S.source.split('\n',1)
+	S.annex.body.append(('c',line))
+
+def Wpro():
+	line, S.source=S.source.split('\n',1)
+	S.pro.body.append(('c',line))
 
 def Wlit():
 	r=word()
@@ -150,13 +170,13 @@ def simple(what):
 	append(*instr)
 	
 	
-def fncall(f):
+def fncall(name):
 	args=[]
 	while not S.endline:
 		r=word()
 		args.append(r)
 
-	append('fncall', f.name, *args)
+	append('fncall', name, *args)
 	
 
 
@@ -186,9 +206,9 @@ def register(*regs):
 
 
 def call():
-	f=S.fn[S.word]
-	if hasattr(f,'name'):
-		fncall(f)
+	f=S.fn.get(S.word)
+	if f is None or hasattr(f,'name'):
+		fncall(S.word)
 	else:
 		apply(f)
 
@@ -324,11 +344,13 @@ def c_functions():
 
 def compile():
 	S.c_file=open('test.c','w')
+	c_output('#include <stdint.h>\n')
 
-	S.c=[]
+	c_decl_body(S.pro)
 	c_pools()
 	c_declarations()
 	c_functions()
+	c_decl_body(S.annex)
 
 
 
