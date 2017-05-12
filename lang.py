@@ -255,7 +255,7 @@ def parse():
 		raise
 
 def c_output(s):
-	print s,
+	S.c_file.write(s)
 
 def c_pools():
 	for p in S.pool.values():
@@ -303,6 +303,16 @@ def c_declarations():
 	args=[]
 	for p in S.fn.values():
 		if not hasattr(p,'body'): continue
+		s="void {}(".format(p.name)
+		c_output(s)
+		c_decl_args(p)
+		c_output(');\n')
+
+
+def c_functions():
+	args=[]
+	for p in S.fn.values():
+		if not hasattr(p,'body'): continue
 
 		s="void {}(".format(p.name)
 		c_output(s)
@@ -313,9 +323,12 @@ def c_declarations():
 		c_output('}\n\n')
 
 def compile():
+	S.c_file=open('test.c','w')
+
 	S.c=[]
 	c_pools()
 	c_declarations()
+	c_functions()
 
 
 
