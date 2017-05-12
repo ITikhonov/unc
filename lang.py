@@ -8,7 +8,18 @@ S=O()
 S.at = ''
 S.pool = {}
 S.fn = {}
+S.c_op = {}
 
+
+def Clit(op,r,v):
+	s='{}[0]={};'.format(r,v)
+	c_output(s)
+
+
+def Csize(op,pool,r):
+	size=S.pool[pool]
+	s='{}[0]={};'.format(r,size)
+	c_output(s)
 
 
 def Wpool():
@@ -25,6 +36,7 @@ def Wfn():
 	p=O()
 	p.name=word()
 	p.regs={}
+	p.locals={}
 	p.types = {}
 	p.body=[]
 
@@ -113,10 +125,17 @@ def builtins():
 		if not name.startswith('W'): continue
 		S.fn[name[1:]] = fn
 
+	for name,fn in S.module.items():
+		if not name.startswith('C'): continue
+		S.c_op[name[1:]] = fn
+
 
 def register(*regs):
 	for r in regs:
-		S.current.regs[r] = True
+		if r.islower():
+			S.current.regs[r] = True
+		else:
+			S.current.locals[r] = True
 
 
 
@@ -190,13 +209,62 @@ def parse():
 		raise
 
 def c_output(s):
-	print s
+	print s,
 
 def c_pools():
-	for p in S.pool:
+	for p in S.pool.values():
 		s="{} {}[{}];\n".format(p.type,p.name,p.size)
 		c_output(s)
 
+def c_decl_args(fn):
+	args=[]
+	for p in sorted(fn.regs):
+		type = fn.types.get(p,'uint64_t')
+		args.append('{} {}[1]'.format(type,p))
+	s=','.join(args)
+	c_output(s)
+
+
+def c_decl_locals(fn):
+	for p in sorted(fn.locals):
+		type = fn.types.get(p,'uint64_t')
+		c_output('{} {}[1];\n'.format(type,p))
+
+
+def c_decl_body(fn):
+	S.c_current_i=0
+	while True:
+		if S.c_current_i==len(fn.body): break
+		op=fn.body[S.c_current_i]
+
+		f=S.c_op.get(op[0])
+
+		if f is None:
+			s='Compiler for {} not found'.format(op)
+			raise Exception(s)
+
+		S.c_current = fn
+		try:
+			ret = apply(f,op)
+			if ret is not None:
+				i=
+		except:
+			print 'Error at:',op
+			raise
+		
+
+def c_declarations():
+	args=[]
+	for p in S.fn.values():
+		if not hasattr(p,'body'): continue
+
+		s="void {}(".format(p.name)
+		c_output(s)
+		c_decl_args(p)
+		c_output(') {\n')
+		c_decl_locals(p)
+		c_decl_body(p)
+		c_output('}\n\n')
 
 def compile():
 	S.c=[]
