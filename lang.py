@@ -174,7 +174,7 @@ def word():
 	return S.word
 
 
-def lang():
+def parse():
 	builtins()
 
 	S.source=open('example.2').read()
@@ -189,11 +189,26 @@ def lang():
 		report()
 		raise
 
-lang()
+def c_pools():
+	for p in S.pool:
+	
+
+
+def compile():
+	S.c=[]
+	c_pools()
+	c_declarations()
+
+
+
+parse()
 pprint.pprint(S.pool)
 for n,v in S.fn.items():
 	if hasattr(v,'body'):
 		pprint.pprint((n,v.regs.keys(),v.body))
+
+
+compile()
 
 
 
