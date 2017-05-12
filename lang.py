@@ -189,9 +189,13 @@ def parse():
 		report()
 		raise
 
+def c_output(s):
+	print s
+
 def c_pools():
 	for p in S.pool:
-	
+		s="{} {}[{}];\n".format(p.type,p.name,p.size)
+		c_output(s)
 
 
 def compile():
