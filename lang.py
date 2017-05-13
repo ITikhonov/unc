@@ -71,6 +71,10 @@ def Cstore(op,name,r):
 	s='\t{}[0]={}[0];\n'.format(name,r)
 	c_output(s)
 
+def Cfetchi(op,name,r,i):
+	s='\t{}[0]={}[{}[0]];\n'.format(r,name,i)
+	c_output(s)
+
 def Cfetch(op,name,r):
 	s='\t{}[0]={}[0];\n'.format(r,name)
 	c_output(s)
@@ -136,6 +140,10 @@ def Wfetch():
 	r=word()
 	register(r)
 	append('fetch',name,r)
+
+
+def Wfetchi(): simple('fetchi nrr')
+
 
 def Wmov(): simple('mov rr')
 
