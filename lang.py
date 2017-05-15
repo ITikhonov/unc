@@ -19,7 +19,7 @@ def Cc(op, line):
 	c_output(line+'\n')
 
 
-def Clit(op,r,v):
+def Clit(op,v,r):
 	s='\t{}[0]={};\n'.format(r,v)
 	c_output(s)
 
@@ -114,50 +114,26 @@ def Wpro():
 	S.pro.body.append(('c',line))
 
 def Wlit():
-	r=word()
-	value=word()
-
-	register(r)
-	S.current.body.append(('lit',r,value))
+	simple('lit nr')
 
 
-def Wmul():
-	simple('mul rrr')
-	
-def Wmod():
-	a=word()
-	b=word()
-	r=word()
-	register(a,b,r)
-	append('mod',a,b,r)
-
-def Wend():
-	S.current = None
-
-
-def Wfetch():
-	name=word()
-	r=word()
-	register(r)
-	append('fetch',name,r)
-
-
-def Wfetchi(): simple('fetchi nrr')
-
-
-def Wmov(): simple('mov rr')
-
+def Wmul(): simple('mul r')
+def Wmod(): simple('mod r')
+def Wend(): S.current = None
+def Wfetch(): simple('fetch nr')
+def Wfetchi(): simple('fetchi nr')
+def Wmov(): simple('mov r')
 def Wstore(): simple('store nr')
-def Wstorei(): simple('storei nrr')
+def Wstorei(): simple('storei nr')
 def Winc(): simple('inc r')
-def Wlt(): simple('lt rrr')
+def Wlt(): simple('lt r')
 def Wsize(): simple('size nr')
 def Wloop(): simple('loop r')
 
 
 def Wtype():
-	r=word()
 	type=word()
+	r=word()
 	register(r)
 	S.current.types[r]=type
 
@@ -165,26 +141,25 @@ def Wtype():
 def simple(what):
 	op,pat = what.split()
 	instr = [op]
-	for x in pat:
-		if x == 'r':
-			r=word()
-			register(r)
-			instr.append(r)
-		elif x == 'n':
-			n=word()
-			instr.append(n)
-		else:
-			raise
+
+	if pat.startswith('n'):
+		n=word()
+		print what, n
+		instr.append(n)
+		pat=pat[1:]
+
+	if pat!='r': raise
+
+	s=word()
+	for r in s:
+		register(r)
+		instr.append(r)
 	append(*instr)
 	
 	
 def fncall(name):
-	args=[]
-	while not S.endline:
-		r=word()
-		args.append(r)
-
-	append('fncall', name, *args)
+	r=word()
+	append('fncall', name, *r)
 	
 
 
