@@ -85,6 +85,7 @@ def Cfetch(op,name,r):
 def Wpool():
 	p=O()
 	p.name=word()
+	p.name='pool_'+p.name
 	p.size=word()
 	p.type=word()
 	S.pool[p.name]=p
@@ -160,8 +161,10 @@ def simple(what):
 	
 	
 def fncall(name):
-	r=word()
-	append('fncall', name, *r)
+	s=word()
+	for r in s:
+		register(r)
+	append('fncall', name, *s)
 	
 
 
@@ -402,8 +405,43 @@ def compile():
 
 	c_decl_body(S.annex)
 
+def generate_pool_fns():
+	for p in S.pool.values():
+		assert p.name[:5] == 'pool_'
+		name = p.name[5:]
+
+		fn=O()
+		fn.name=name
+		fn.regs={'a':True}
+		fn.locals={}
+		fn.types = {'a':p.type}
+		fn.body=[('fetch',p.name,'a')]
+		S.fn[fn.name]=fn
+
+		fn=O()
+		fn.name=name+'_i';
+		fn.regs={'a':True,'b':True}
+		fn.locals={}
+		fn.types = {'a':p.type,'b':'uint64_t'}
+		fn.body=[('fetchi',p.name,'a','b')]
+		S.fn[fn.name]=fn
+
+		fn=O()
+		fn.name=name+'_size';
+		fn.regs={'a':True}
+		fn.locals={}
+		fn.types = {'b':'uint64_t'}
+		fn.body=[('lit',str(p.size),'a')]
+		S.fn[fn.name]=fn
+
+
+
+
+def generate():
+	generate_pool_fns()
 
 parse()
+generate()
 pprint.pprint(S.pool)
 for n,v in S.fn.items():
 	if hasattr(v,'body'):

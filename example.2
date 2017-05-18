@@ -13,10 +13,13 @@ inc a
 end
 
 fn rng
-fetch rng_state A
+type uint32_t B
+rng_state B
+mov BA
 rng_stateless A
 mov Aa
-store rng_state a
+mov AB
+rng_state_store B
 end
 
 fn frng
@@ -29,9 +32,9 @@ end
 fn create
 type float A
 frng A
-storei star_x Aa
+star_x_storei Aa
 frng A
-storei star_y Aa
+star_y_storei Aa
 inc a
 lt abz
 c printf("CR %llu %llu %llu\n", a[0], b[0], z[0]);
@@ -39,13 +42,13 @@ end
 
 fn populate
 lit 0 A
-size star_x B
+star_x_size B
 loop Z create ABZ
 end
 
 fn dump
 lit 0 A
-size star_x B
+star_x_size B
 loop Z dumpone ABZ
 end
 
@@ -53,8 +56,8 @@ end
 fn dumpone
 type float X
 type float Y
-fetchi star_x Xa
-fetchi star_y Ya
+star_x_i Xa
+star_y_i Ya
 c printf("%0.2f %0.2f\n", *X, *Y);
 inc a
 lt abz
