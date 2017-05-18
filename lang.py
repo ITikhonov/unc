@@ -427,6 +427,22 @@ def generate_pool_fns():
 		S.fn[fn.name]=fn
 
 		fn=O()
+		fn.name=name+'_store'
+		fn.regs={'a':True}
+		fn.locals={}
+		fn.types = {'a':p.type}
+		fn.body=[('store',p.name,'a')]
+		S.fn[fn.name]=fn
+
+		fn=O()
+		fn.name=name+'_storei';
+		fn.regs={'a':True,'b':True}
+		fn.locals={}
+		fn.types = {'a':p.type,'b':'uint64_t'}
+		fn.body=[('storei',p.name,'a','b')]
+		S.fn[fn.name]=fn
+
+		fn=O()
 		fn.name=name+'_size';
 		fn.regs={'a':True}
 		fn.locals={}
