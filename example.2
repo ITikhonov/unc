@@ -60,7 +60,11 @@ inc a
 lt abz
 end
 
+fn bye
+c exit(0);
+
 
 pro #include <stdio.h>
-anx int main() { populate(); dump(); }
+pro #include <stdlib.h>
+anx int main() { udp_setup(); populate(); dump(); for(;;) udp_handler(); }
 

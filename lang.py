@@ -1,5 +1,7 @@
 import pprint
 
+UDP_PORT=7532
+
 class O:
 	def __repr__(_):
 		return 'O{'+str(_.__dict__)
@@ -303,7 +305,6 @@ def c_decl_body(fn):
 		
 
 def c_declarations():
-	args=[]
 	for p in S.fn.values():
 		if not hasattr(p,'body'): continue
 		s="void {}(".format(p.name)
@@ -313,7 +314,6 @@ def c_declarations():
 
 
 def c_functions():
-	args=[]
 	for p in S.fn.values():
 		if not hasattr(p,'body'): continue
 
@@ -325,6 +325,70 @@ def c_functions():
 		c_decl_body(p)
 		c_output('}\n\n')
 
+
+def c_udp_handler_args(fn):
+	args=[]
+	offset='4'
+	for p in sorted(fn.regs):
+		type = fn.types.get(p,'uint64_t')
+		args.append('({}*)(packet+{})'.format(type,offset))
+		offset=offset+'+sizeof({})'.format(type)
+	s=','.join(args)
+	c_output(s)
+
+
+def c_udp_handler():
+	s="""
+#include <sys/socket.h>
+#include <sys/select.h>
+#include <arpa/inet.h>
+
+int udp_socket[1]; void udp_setup(void) {{
+	udp_socket[0]=socket(AF_INET,SOCK_DGRAM,0);
+	struct sockaddr_in a={{.sin_family=AF_INET,.sin_addr.s_addr=inet_addr("127.0.0.1"),.sin_port=htons({})}};
+	bind(udp_socket[0],(struct sockaddr*)&a,sizeof(a));
+}}
+
+""".format(UDP_PORT)
+	c_output(s)
+
+
+	s="""
+void udp_handler(void) {
+	fd_set fds;
+	FD_ZERO(&fds);
+	FD_SET(udp_socket[0],&fds);
+	int ret=select(udp_socket[0]+1,&fds,0,0,0);
+	if(ret==0) return;
+
+	
+	uint8_t packet[65535];
+	struct sockaddr_in a;
+	socklen_t alen=sizeof(a);
+	int size=recvfrom(udp_socket[0],packet,sizeof(packet),0,(struct sockaddr*)&a,&alen);
+
+
+	uint32_t *fn=(uint32_t *)packet;
+	switch(*fn) {
+"""
+	c_output(s)
+
+	opcode=0
+	for p in S.fn.values():
+		if not hasattr(p,'body'): continue
+		s="\t\tcase {}: {}(".format(opcode, p.name)
+		c_output(s)
+		c_udp_handler_args(p)
+		c_output('); break;\n')
+		opcode+=1
+
+	s="""
+	}
+	sendto(udp_socket[0],packet,size,0,(struct sockaddr*)&a,alen);
+}
+"""
+	c_output(s)
+
 def compile():
 	S.c_file=open('test.c','w')
 	c_output('#include <stdint.h>\n')
@@ -333,8 +397,10 @@ def compile():
 	c_pools()
 	c_declarations()
 	c_functions()
-	c_decl_body(S.annex)
 
+	c_udp_handler()
+
+	c_decl_body(S.annex)
 
 
 parse()
@@ -345,6 +411,4 @@ for n,v in S.fn.items():
 
 
 compile()
-
-
 
