@@ -1,69 +1,53 @@
 
-pool star_x 65536 float
-pool star_y 65536 float
-pool rng_state 1 uint32_t
+pool,star_x,65536,float
+pool,star_y,65536,float
+pool,rng_state,1,uint32_t
 
 
-fn rng_stateless
-lit 48271UL A
-lit 2147483647UL B
-mul Aaa 
-mod aBa
-inc a
+fn,rng_stateless
+lit,48271UL,A
+lit,2147483647UL,B
+mul,Aaa 
+mod,aBa
+inc,a
 end
 
-fn rng
-type uint32_t B
-rng_state B
-mov BA
-rng_stateless A
-mov Aa
-mov AB
-rng_state_store B
+fn,rng type,uint32_t,B
+rng_state,B mov,BA rng_stateless,A mov,Aa mov,AB
+rng_state_store,B
 end
 
-fn frng
-type float a
-rng A
-mov Aa
+fn,frng type,float,a
+rng,A mov,Aa
 end
 
 
-fn create
-type float A
-frng A
-star_x_storei Aa
-frng A
-star_y_storei Aa
-inc a
-lt abz
+fn,create type,float,A
+frng,A star_x_storei,Aa frng,A star_y_storei,Aa inc,a lt,abz
 c printf("CR %llu %llu %llu\n", a[0], b[0], z[0]);
 end
 
-fn populate
-lit 0 A
-star_x_size B
-loop Z create ABZ
+fn,populate
+lit,0,A
+star_x_size,B
+loop,Z create,ABZ
 end
 
-fn dump
-lit 0 A
-star_x_size B
-loop Z dumpone ABZ
+fn,dump
+lit,0,A
+star_x_size,B
+loop,Z dumpone,ABZ
+bye
 end
 
 
-fn dumpone
-type float X
-type float Y
-star_x_i Xa
-star_y_i Ya
+fn,dumpone type,float,X type,float,Y
+star_x_i,Xa star_y_i,Ya
 c printf("%0.2f %0.2f\n", *X, *Y);
-inc a
-lt abz
+inc,a lt,abz
 end
 
-fn bye
+fn,bye
 c exit(0);
 
 

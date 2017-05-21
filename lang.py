@@ -82,20 +82,19 @@ def Cfetch(op,name,r):
 	c_output(s)
 
 
-def Wpool():
+def Wpool(name,size,type):
 	p=O()
-	p.name=word()
-	p.name='pool_'+p.name
-	p.size=word()
-	p.type=word()
+	p.name='pool_'+name
+	p.size=size
+	p.type=type
 	S.pool[p.name]=p
 
 def WS():
 	S.source=S.source.split('\n',1)[1]
 
-def Wfn():
+def Wfn(name):
 	p=O()
-	p.name=word()
+	p.name=name
 	p.regs={}
 	p.locals={}
 	p.types = {}
@@ -116,56 +115,48 @@ def Wpro():
 	line, S.source=S.source.split('\n',1)
 	S.pro.body.append(('c',line))
 
-def Wlit():
-	simple('lit nr')
+def Wlit(*_): simple()
+def Wmul(*_): simple()
+def Wmod(*_): simple()
+def Wend(*_): S.current = None
+def Wfetch(*_): simple()
+def Wfetchi(*_): simple()
+def Wmov(*_): simple()
+def Wstore(*_): simple()
+def Wstorei(*_): simple()
+def Winc(*_): simple()
+def Wlt(*_): simple()
+def Wsize(*_): simple()
+def Wloop(*_): simple()
 
 
-def Wmul(): simple('mul r')
-def Wmod(): simple('mod r')
-def Wend(): S.current = None
-def Wfetch(): simple('fetch nr')
-def Wfetchi(): simple('fetchi nr')
-def Wmov(): simple('mov r')
-def Wstore(): simple('store nr')
-def Wstorei(): simple('storei nr')
-def Winc(): simple('inc r')
-def Wlt(): simple('lt r')
-def Wsize(): simple('size nr')
-def Wloop(): simple('loop r')
-
-
-def Wtype():
-	type=word()
-	r=word()
-	register(r)
-	S.current.types[r]=type
-
-
-def simple(what):
-	op,pat = what.split()
-	instr = [op]
-
-	if pat.startswith('n'):
-		n=word()
-		print what, n
-		instr.append(n)
-		pat=pat[1:]
-
-	if pat!='r': raise
-
-	s=word()
-	for r in s:
+def Wtype(type,regs):
+	type=type
+	for r in regs:
 		register(r)
-		instr.append(r)
-	append(*instr)
+		S.current.types[r]=type
+
+
+def simple():
+	if len(S.args)==1:
+		register(*S.args[0])
+		append(S.word,*S.args[0])
+	else:
+		name,regs=S.args
+		register(*regs)
+		append(S.word,name,*regs)
+		
 	
 	
 def fncall(name):
-	s=word()
-	for r in s:
-		register(r)
-	append('fncall', name, *s)
-	
+	if len(S.args)==1:
+		for r in S.args[0]:
+			register(r)
+		append('fncall', name, *S.args[0])
+	elif len(S.args)==0:
+		append('fncall', name)
+	else:
+		raise
 
 
 def append(*args):
@@ -198,7 +189,7 @@ def call():
 	if f is None or hasattr(f,'name'):
 		fncall(S.word)
 	else:
-		apply(f)
+		apply(f,S.args)
 
 
 def report():
@@ -222,7 +213,7 @@ def strip():
 		c=S.source[i]
 		if c in ' \t':
 			continue
-		if c in '\n;':
+		if c in '\n':
 			S.line = S.source[1:]
 			line = True
 			continue
@@ -233,18 +224,18 @@ def strip():
 	S.endline = line
 
 
-def word():
+def token():
 	strip()
 	for i in range(len(S.source)):
 		c=S.source[i]
-		if c in ' \n\t;':
+		if c in ' \n\t':
 			break
 
-	S.word = S.source[:i]
+	parts=S.source[:i].split(',')
+	S.word=parts[0]
+	S.args=parts[1:]
 	S.source=S.source[i:]
 	strip()
-
-	return S.word
 
 
 def parse():
@@ -255,7 +246,7 @@ def parse():
 	S.at = S.source
 	try:
 		while True:
-			word()
+			token()
 			if S.word == '': break
 			call()
 	except:
