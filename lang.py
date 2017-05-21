@@ -1,3 +1,4 @@
+import sys
 import pprint
 
 UDP_PORT=7532
@@ -87,6 +88,7 @@ def Wpool(name,size,type):
 	p.name='pool_'+name
 	p.size=size
 	p.type=type
+	assert p.name not in S.pool
 	S.pool[p.name]=p
 
 def WS():
@@ -101,6 +103,7 @@ def Wfn(name):
 	p.body=[]
 
 	S.current=p
+	assert p.name not in S.fn
 	S.fn[p.name]=p
 
 def Wc():
@@ -240,8 +243,12 @@ def token():
 
 def parse():
 	builtins()
+	for f in S.files:
+		S.source=open(f).read()
+		parse_one()
 
-	S.source=open('example.2').read()
+
+def parse_one():
 	S.line = S.source
 	S.at = S.source
 	try:
@@ -384,7 +391,7 @@ void udp_handler(void) {
 	c_output(s)
 
 def compile():
-	S.c_file=open('test.c','w')
+	S.c_file=open(S.output,'w')
 	c_output('#include <stdint.h>\n')
 
 	c_decl_body(S.pro)
@@ -447,13 +454,21 @@ def generate_pool_fns():
 def generate():
 	generate_pool_fns()
 
-parse()
-generate()
-pprint.pprint(S.pool)
-for n,v in S.fn.items():
-	if hasattr(v,'body'):
-		pprint.pprint((n,v.regs.keys(),v.body))
+
+def temp_debug():
+	pprint.pprint(S.pool)
+	for n,v in S.fn.items():
+		if hasattr(v,'body'):
+			pprint.pprint((n,v.regs.keys(),v.body))
 
 
-compile()
+def main():
+	S.output = sys.argv[1]
+	S.files = sys.argv[2:]
+	parse()
+	generate()
+	temp_debug()
+	compile()
 
+
+main()
