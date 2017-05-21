@@ -23,28 +23,25 @@ end
 
 
 fn,create type,float,A
-frng,A star-x-storei,Aa frng,A star-y-storei,Aa inc,a lt,abz
-c printf("CR %llu %llu %llu\n", a[0], b[0], z[0]);
+frng,A star-x-storei,Ai frng,A star-y-storei,Ai
+c printf("CR %llu\n", *i);
 end
 
 fn,populate
-lit,0,A
-star-x-size,B
-loop,Z create,ABZ
+each,star_x,NI create,I
 end
 
 fn,dump
 lit,0,A
 star-x-size,B
-loop,Z dumpone,ABZ
+times,BI dumpone,I
 bye
 end
 
 
 fn,dumpone type,float,X type,float,Y
-star-x-i,Xa star-y-i,Ya
-c printf("%0.2f %0.2f\n", *X, *Y);
-inc,a lt,abz
+star-x-i,Xi star-y-i,Yi
+c printf("%lli %0.2f %0.2f\n", *i, *X, *Y);
 end
 
 fn,bye

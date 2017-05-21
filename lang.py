@@ -35,6 +35,14 @@ def Csize(op,pool,r):
 	s='\t{}[0]={};\n'.format(r,size)
 	c_output(s)
 
+def Ctimes(op,rn,ri):
+	s='\tfor({ri}[0]=0;{ri}[0]<{rn}[0];{ri}[0]++) '.format(ri=ri,rn=rn)
+	c_output(s)
+
+def Ctimesn(op,n,ri):
+	s='\tfor({ri}[0]=0;{ri}[0]<{n};{ri}[0]++) '.format(ri=ri,n=n)
+	c_output(s)
+
 def Cloop(op,r):
 	s='\tfor({}[0]=1;{}[0];) '.format(r,r)
 	c_output(s)
@@ -54,7 +62,7 @@ def Cmul(op,a,b,r):
 	s='\t{}[0]={}[0]*{}[0];\n'.format(r,a,b)
 	c_output(s)
 
-def Cmul(op,a,b,r):
+def Cdiv(op,a,b,r):
 	s='\t{}[0]={}[0]/{}[0];\n'.format(r,a,b)
 	c_output(s)
 
@@ -143,6 +151,14 @@ def Winc(*_): simple()
 def Wlt(*_): simple()
 def Wsize(*_): simple()
 def Wloop(*_): simple()
+def Wtimes(*_): simple()
+def Wtimesn(*_): simple()
+
+def Weach(pool,regs):
+	register(*regs)
+	rn,ri=regs
+	append('fncall',pool+'-size',rn)
+	append('times',rn,ri)
 
 
 def Wtype(type,regs):
