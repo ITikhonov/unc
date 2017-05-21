@@ -4,7 +4,7 @@ pool,star_y,65536,float
 pool,rng_state,1,uint32_t
 
 
-fn,rng_stateless
+fn,rng-stateless
 lit,48271UL,A
 lit,2147483647UL,B
 mul,Aaa 
@@ -13,8 +13,8 @@ inc,a
 end
 
 fn,rng type,uint32_t,B
-rng_state,B mov,BA rng_stateless,A mov,Aa mov,AB
-rng_state_store,B
+rng-state,B mov,BA rng-stateless,A mov,Aa mov,AB
+rng-state-store,B
 end
 
 fn,frng type,float,a
@@ -23,26 +23,26 @@ end
 
 
 fn,create type,float,A
-frng,A star_x_storei,Aa frng,A star_y_storei,Aa inc,a lt,abz
+frng,A star-x-storei,Aa frng,A star-y-storei,Aa inc,a lt,abz
 c printf("CR %llu %llu %llu\n", a[0], b[0], z[0]);
 end
 
 fn,populate
 lit,0,A
-star_x_size,B
+star-x-size,B
 loop,Z create,ABZ
 end
 
 fn,dump
 lit,0,A
-star_x_size,B
+star-x-size,B
 loop,Z dumpone,ABZ
 bye
 end
 
 
 fn,dumpone type,float,X type,float,Y
-star_x_i,Xa star_y_i,Ya
+star-x-i,Xa star-y-i,Ya
 c printf("%0.2f %0.2f\n", *X, *Y);
 inc,a lt,abz
 end

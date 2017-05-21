@@ -17,6 +17,9 @@ S.annex.body=[]
 S.pro = O()
 S.pro.body=[]
 
+def c_name(name):
+	return name.replace('-','_')
+
 
 def Cc(op, line):
 	c_output(line+'\n')
@@ -37,6 +40,7 @@ def Cloop(op,r):
 	c_output(s)
 
 def Cfncall(op, func, *args):
+	func=c_name(func)
 	rs=[]
 	for r in args:
 		s='{}'.format(r)
@@ -48,6 +52,10 @@ def Cfncall(op, func, *args):
 
 def Cmul(op,a,b,r):
 	s='\t{}[0]={}[0]*{}[0];\n'.format(r,a,b)
+	c_output(s)
+
+def Cmul(op,a,b,r):
+	s='\t{}[0]={}[0]/{}[0];\n'.format(r,a,b)
 	c_output(s)
 
 def Cmod(op,a,b,r):
@@ -67,18 +75,22 @@ def Cmov(op,s,d):
 	c_output(s)
 
 def Cstorei(op,name,r,i):
+	name=c_name(name)
 	s='\t{}[{}[0]]={}[0];\n'.format(name,i,r)
 	c_output(s)
 
 def Cstore(op,name,r):
+	name=c_name(name)
 	s='\t{}[0]={}[0];\n'.format(name,r)
 	c_output(s)
 
 def Cfetchi(op,name,r,i):
+	name=c_name(name)
 	s='\t{}[0]={}[{}[0]];\n'.format(r,name,i)
 	c_output(s)
 
 def Cfetch(op,name,r):
+	name=c_name(name)
 	s='\t{}[0]={}[0];\n'.format(r,name)
 	c_output(s)
 
@@ -262,6 +274,8 @@ def parse_one():
 
 def c_output(s):
 	S.c_file.write(s)
+	# S.c_file.write(' //' + S.line.split('\n')[0])
+	# S.c_file.write('\n')
 
 def c_pools():
 	for p in S.pool.values():
@@ -308,7 +322,7 @@ def c_decl_body(fn):
 def c_declarations():
 	for p in S.fn.values():
 		if not hasattr(p,'body'): continue
-		s="void {}(".format(p.name)
+		s="void {}(".format(c_name(p.name))
 		c_output(s)
 		c_decl_args(p)
 		c_output(');\n')
@@ -318,7 +332,7 @@ def c_functions():
 	for p in S.fn.values():
 		if not hasattr(p,'body'): continue
 
-		s="void {}(".format(p.name)
+		s="void {}(".format(c_name(p.name))
 		c_output(s)
 		c_decl_args(p)
 		c_output(') {\n')
@@ -377,7 +391,7 @@ void udp_handler(void) {
 	opcode=0
 	for p in S.fn.values():
 		if not hasattr(p,'body'): continue
-		s="\t\tcase {}: {}(".format(opcode, p.name)
+		s="\t\tcase {}: {}(".format(opcode, c_name(p.name))
 		c_output(s)
 		c_udp_handler_args(p)
 		c_output('); break;\n')
