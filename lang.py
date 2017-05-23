@@ -10,6 +10,7 @@ class O:
 S=O()
 S.at = ''
 S.pool = {}
+S.band = {}
 S.fn = {}
 S.c_op = {}
 S.annex = O()
@@ -111,6 +112,13 @@ def Wpool(name,size,type):
 	assert p.name not in S.pool
 	S.pool[p.name]=p
 
+def Wband(name,*ps):
+	p=O()
+	p.name=name
+	p.pools=ps
+	assert p.name not in S.band
+	S.band[p.name]=p
+
 def WS():
 	S.source=S.source.split('\n',1)[1]
 
@@ -140,6 +148,7 @@ def Wpro():
 
 def Wlit(*_): simple()
 def Wmul(*_): simple()
+def Wdiv(*_): simple()
 def Wmod(*_): simple()
 def Wend(*_): S.current = None
 def Wfetch(*_): simple()
@@ -293,10 +302,29 @@ def c_output(s):
 	# S.c_file.write(' //' + S.line.split('\n')[0])
 	# S.c_file.write('\n')
 
+
+def c_bands():
+	S.banded={}
+	for b in S.band.values():
+		ps=[S.pool['pool_'+x] for x in b.pools]
+		sizes=[x.size for x in ps]
+		size=sizes[0]
+		assert sizes.count(size)==len(sizes)
+
+		s='struct {} {{\n'.format(c_name(b.name))
+		c_output(s)
+		for p in ps:
+			s="{} {};\n".format(p.type,c_name(p.name))
+			c_output(s)
+		s='}} {}[{}];\n'.format(c_name(b.name),size)
+		c_output(s)
+
+
 def c_pools():
 	for p in S.pool.values():
-		s="{} {}[{}];\n".format(p.type,p.name,p.size)
+		s="{} {}[{}];\n".format(p.type,c_name(p.name),p.size)
 		c_output(s)
+
 
 def c_decl_args(fn):
 	args=[]
@@ -425,6 +453,7 @@ def compile():
 	c_output('#include <stdint.h>\n')
 
 	c_decl_body(S.pro)
+	c_bands()
 	c_pools()
 	c_declarations()
 	c_functions()
