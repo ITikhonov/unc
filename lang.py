@@ -17,6 +17,7 @@ S.annex = O()
 S.annex.body=[]
 S.pro = O()
 S.pro.body=[]
+S.pack = {}
 
 def c_name(name):
 	return name.replace('-','_')
@@ -118,6 +119,10 @@ def Wpool(name,size,type):
 	p.type=type
 	assert p.name not in S.pool
 	S.pool[p.name]=p
+
+def Wpack(*bs):
+	for b in bs:
+		S.pack[b]=True
 
 def Wband(name,*ps):
 	p=O()
@@ -318,13 +323,17 @@ def c_bands():
 		size=sizes[0]
 		assert sizes.count(size)==len(sizes)
 
+		packing=''
+		if b.name in S.pack:
+			packing='__attribute__((__packed__)) '
+
 		s='struct {} {{\n'.format(c_name(b.name))
 		c_output(s)
 		for p in ps:
 			S.banded[p.name]=b.name
 			s="{} {};\n".format(p.type,c_name(p.name))
 			c_output(s)
-		s='}} {}[{}];\n'.format(c_name(b.name),size)
+		s='}} {}{}[{}];\n'.format(packing,c_name(b.name),size)
 		c_output(s)
 
 
