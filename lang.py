@@ -84,29 +84,36 @@ def Cmov(op,s,d):
 	c_output(s)
 
 def Cstorei(op,name,r,i):
-	name=c_name(name)
-	s='\t{}[{}[0]]={}[0];\n'.format(name,i,r)
-	c_output(s)
-
-def Cstore(op,name,r):
-	name=c_name(name)
-	s='\t{}[0]={}[0];\n'.format(name,r)
-	c_output(s)
+	band=S.banded.get(name)
+	if not band:
+		name=c_name(name)
+		s='\tpool_{}[{}[0]]={}[0];\n'.format(name,i,r)
+		c_output(s)
+	else:
+		name=c_name(name)
+		s='\t{}[{}[0]].{}={}[0];\n'.format(band,i,name,r)
+		c_output(s)
 
 def Cfetchi(op,name,r,i):
-	name=c_name(name)
-	s='\t{}[0]={}[{}[0]];\n'.format(r,name,i)
-	c_output(s)
+	band=S.banded.get(name)
+	if not band:
+		name=c_name(name)
+		s='\t{}[0]=pool_{}[{}[0]];\n'.format(r,name,i)
+		c_output(s)
+	else:
+		name=c_name(name)
+		s='\t{}[0]={}[{}[0]].{};\n'.format(r,band,i,name)
+		c_output(s)
 
 def Cfetch(op,name,r):
 	name=c_name(name)
-	s='\t{}[0]={}[0];\n'.format(r,name)
+	s='\t{}[0]=pool_{}[0];\n'.format(r,name)
 	c_output(s)
 
 
 def Wpool(name,size,type):
 	p=O()
-	p.name='pool_'+name
+	p.name=name
 	p.size=size
 	p.type=type
 	assert p.name not in S.pool
@@ -306,7 +313,7 @@ def c_output(s):
 def c_bands():
 	S.banded={}
 	for b in S.band.values():
-		ps=[S.pool['pool_'+x] for x in b.pools]
+		ps=[S.pool[x] for x in b.pools]
 		sizes=[x.size for x in ps]
 		size=sizes[0]
 		assert sizes.count(size)==len(sizes)
@@ -314,6 +321,7 @@ def c_bands():
 		s='struct {} {{\n'.format(c_name(b.name))
 		c_output(s)
 		for p in ps:
+			S.banded[p.name]=b.name
 			s="{} {};\n".format(p.type,c_name(p.name))
 			c_output(s)
 		s='}} {}[{}];\n'.format(c_name(b.name),size)
@@ -322,7 +330,8 @@ def c_bands():
 
 def c_pools():
 	for p in S.pool.values():
-		s="{} {}[{}];\n".format(p.type,c_name(p.name),p.size)
+		if p.name in S.banded: continue
+		s="{} pool_{}[{}];\n".format(p.type,c_name(p.name),p.size)
 		c_output(s)
 
 
@@ -464,15 +473,14 @@ def compile():
 
 def generate_pool_fns():
 	for p in S.pool.values():
-		assert p.name[:5] == 'pool_'
-		name = p.name[5:]
+		name=p.name
 
 		fn=O()
 		fn.name=name
 		fn.regs={'a':True}
-		fn.locals={}
-		fn.types = {'a':p.type}
-		fn.body=[('fetch',p.name,'a')]
+		fn.locals={'A':True}
+		fn.types = {'a':p.type,'A':'uint64_t'}
+		fn.body=[('lit','0','A'),('fetchi',p.name,'a','A')]
 		S.fn[fn.name]=fn
 
 		fn=O()
@@ -486,9 +494,9 @@ def generate_pool_fns():
 		fn=O()
 		fn.name=name+'_store'
 		fn.regs={'a':True}
-		fn.locals={}
-		fn.types = {'a':p.type}
-		fn.body=[('store',p.name,'a')]
+		fn.locals={'A':True}
+		fn.types = {'a':p.type,'A':'uint64_t'}
+		fn.body=[('lit','0','A'),('storei',p.name,'a','A')]
 		S.fn[fn.name]=fn
 
 		fn=O()
@@ -503,7 +511,7 @@ def generate_pool_fns():
 		fn.name=name+'_size';
 		fn.regs={'a':True}
 		fn.locals={}
-		fn.types = {'b':'uint64_t'}
+		fn.types = {'a':'uint64_t'}
 		fn.body=[('lit',str(p.size),'a')]
 		S.fn[fn.name]=fn
 
