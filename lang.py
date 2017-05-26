@@ -331,7 +331,7 @@ def c_bands():
 		c_output(s)
 		for p in ps:
 			S.banded[p.name]=b.name
-			s="{} {};\n".format(p.type,c_name(p.name))
+			s="\t{} {};\n".format(p.type,c_name(p.name))
 			c_output(s)
 		s='}} {}{}[{}];\n'.format(packing,c_name(b.name),size)
 		c_output(s)
