@@ -418,7 +418,8 @@ def c_decl_args(fn):
 		regs=fn.args
 	else:
 		regs=sorted(fn.regs)
-		print 'WARNING: deprecated no-args fn',fn.name
+		if regs:
+			print 'WARNING: deprecated no-args fn',fn.name,''.join(regs)
 
 	for p in regs:
 		type = fn.types.get(p,'uint64_t')
@@ -485,7 +486,6 @@ def c_udp_handler_args(fn):
 		regs=fn.args
 	else:
 		regs=sorted(fn.regs)
-		print 'WARNING: deprecated no-args fn',fn.name
 
 	for p in regs:
 		type = fn.types.get(p,'uint64_t')

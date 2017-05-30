@@ -17,17 +17,17 @@ mod,xBx
 inc,x
 end
 
-fn,rng type,uint32_t,B
+fn,rng,a type,uint32_t,B
 rng-state,B mov,BA rng-stateless,A mov,Aa mov,AB
 rng-state-store,B
 end
 
-fn,frng type,float,a
+fn,frng,a type,float,a
 rng,A mov,Aa
 end
 
 
-fn,create type,float,A
+fn,create,i type,float,A
 frng,A star-x-storei,Ai frng,A star-y-storei,Ai
 c printf("CR %llu\n", *i);
 end
@@ -44,7 +44,7 @@ bye
 end
 
 
-fn,dumpone type,float,X type,float,Y
+fn,dumpone,i type,float,X type,float,Y
 star-x-i,Xi star-y-i,Yi
 c printf("%lli %0.2f %0.2f\n", *i, *X, *Y);
 end
