@@ -3,15 +3,18 @@ pool,star_x,65536,float
 pool,star_y,65536,float
 band,star,star_x,star_y
 pack,star
+
 pool,rng-state,1,uint32_t
+pool,bogus,17,uint32_t
+bundle,state,rng-state,bogus
 
 
-fn,rng-stateless
+fn,rng-stateless,x
 lit,48271UL,A
 lit,2147483647UL,B
-mul,Aaa 
-mod,aBa
-inc,a
+mul,Axx 
+mod,xBx
+inc,x
 end
 
 fn,rng type,uint32_t,B

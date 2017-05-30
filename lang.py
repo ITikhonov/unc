@@ -11,6 +11,7 @@ S=O()
 S.at = ''
 S.pool = {}
 S.band = {}
+S.bundle = {}
 S.fn = {}
 S.c_op = {}
 S.annex = O()
@@ -49,6 +50,10 @@ def Cloop(op,r):
 	s='\tfor({}[0]=1;{}[0];) '.format(r,r)
 	c_output(s)
 
+def Cif(op,r):
+	s='\tif({}[0]) '.format(r)
+	c_output(s)
+
 def Cfncall(op, func, *args):
 	func=c_name(func)
 	rs=[]
@@ -58,6 +63,14 @@ def Cfncall(op, func, *args):
 
 	sa=','.join(rs)
 	s='\t{}({});\n'.format(func,sa)
+	c_output(s)
+
+def Cadd(op,a,b,r):
+	s='\t{}[0]={}[0]+{}[0];\n'.format(r,a,b)
+	c_output(s)
+
+def Csub(op,a,b,r):
+	s='\t{}[0]={}[0]-{}[0];\n'.format(r,a,b)
 	c_output(s)
 
 def Cmul(op,a,b,r):
@@ -80,30 +93,50 @@ def Clt(op,a,b,r):
 	s='\t{}[0]={}[0]<{}[0];\n'.format(r,a,b)
 	c_output(s)
 
+def Ceq(op,a,b,r):
+	s='\t{}[0]={}[0]=={}[0];\n'.format(r,a,b)
+	c_output(s)
+
+def Cret(op):
+	s='\treturn;\n'
+	c_output(s)
+
 def Cmov(op,s,d):
 	s='\t{}[0]={}[0];\n'.format(d,s)
 	c_output(s)
 
 def Cstorei(op,name,r,i):
 	band=S.banded.get(name)
-	if not band:
+	bundle=S.bundled.get(name)
+	assert not (band and bundle)
+	if band:
 		name=c_name(name)
-		s='\tpool_{}[{}[0]]={}[0];\n'.format(name,i,r)
+		s='\t{}[{}[0]].{}={}[0];\n'.format(band,i,name,r)
+		c_output(s)
+	elif bundle:
+		name=c_name(name)
+		s='\t{}.{}[{}[0]]={}[0];\n'.format(bundle,name,i,r)
 		c_output(s)
 	else:
 		name=c_name(name)
-		s='\t{}[{}[0]].{}={}[0];\n'.format(band,i,name,r)
+		s='\tpool_{}[{}[0]]={}[0];\n'.format(name,i,r)
 		c_output(s)
 
 def Cfetchi(op,name,r,i):
 	band=S.banded.get(name)
-	if not band:
+	bundle=S.bundled.get(name)
+	assert not (band and bundle)
+	if band:
 		name=c_name(name)
-		s='\t{}[0]=pool_{}[{}[0]];\n'.format(r,name,i)
+		s='\t{}[0]={}[{}[0]].{};\n'.format(r,band,i,name)
+		c_output(s)
+	elif bundle:
+		name=c_name(name)
+		s='\t{}[0]={}.{}[{}[0]];\n'.format(r,bundle,name,i)
 		c_output(s)
 	else:
 		name=c_name(name)
-		s='\t{}[0]={}[{}[0]].{};\n'.format(r,band,i,name)
+		s='\t{}[0]=pool_{}[{}[0]];\n'.format(r,name,i)
 		c_output(s)
 
 def Cfetch(op,name,r):
@@ -131,16 +164,24 @@ def Wband(name,*ps):
 	assert p.name not in S.band
 	S.band[p.name]=p
 
+def Wbundle(name,*ps):
+	p=O()
+	p.name=name
+	p.pools=ps
+	assert p.name not in S.bundle
+	S.bundle[p.name]=p
+
 def WS():
 	S.source=S.source.split('\n',1)[1]
 
-def Wfn(name):
+def Wfn(name,args=None):
 	p=O()
 	p.name=name
 	p.regs={}
 	p.locals={}
 	p.types = {}
 	p.body=[]
+	p.args=args
 
 	S.current=p
 	assert p.name not in S.fn
@@ -159,6 +200,8 @@ def Wpro():
 	S.pro.body.append(('c',line))
 
 def Wlit(*_): simple()
+def Wadd(*_): simple()
+def Wsub(*_): simple()
 def Wmul(*_): simple()
 def Wdiv(*_): simple()
 def Wmod(*_): simple()
@@ -170,8 +213,11 @@ def Wstore(*_): simple()
 def Wstorei(*_): simple()
 def Winc(*_): simple()
 def Wlt(*_): simple()
+def Weq(*_): simple()
+def Wret(*_): simple()
 def Wsize(*_): simple()
 def Wloop(*_): simple()
+def Wif(*_): simple()
 def Wtimes(*_): simple()
 def Wtimesn(*_): simple()
 
@@ -190,7 +236,9 @@ def Wtype(type,regs):
 
 
 def simple():
-	if len(S.args)==1:
+	if len(S.args)==0:
+		append(S.word)
+	elif len(S.args)==1:
 		register(*S.args[0])
 		append(S.word,*S.args[0])
 	else:
@@ -337,16 +385,42 @@ def c_bands():
 		c_output(s)
 
 
+def c_bundles():
+	S.bundled={}
+	for b in S.bundle.values():
+		ps=[S.pool[x] for x in b.pools]
+
+		packing=''
+		if b.name in S.pack:
+			packing='__attribute__((__packed__)) '
+
+		s='struct {} {{\n'.format(c_name(b.name))
+		c_output(s)
+		for p in ps:
+			S.bundled[p.name]=b.name
+			s="\t{} {}[{}];\n".format(p.type,c_name(p.name),p.size)
+			c_output(s)
+		s='}} {}{};\n'.format(packing,c_name(b.name))
+		c_output(s)
+
+
 def c_pools():
 	for p in S.pool.values():
 		if p.name in S.banded: continue
+		if p.name in S.bundled: continue
 		s="{} pool_{}[{}];\n".format(p.type,c_name(p.name),p.size)
 		c_output(s)
 
 
 def c_decl_args(fn):
 	args=[]
-	for p in sorted(fn.regs):
+	if fn.args:
+		regs=fn.args
+	else:
+		regs=sorted(fn.regs)
+		print 'WARNING: deprecated no-args fn',fn.name
+
+	for p in regs:
 		type = fn.types.get(p,'uint64_t')
 		args.append('{} {}[1]'.format(type,p))
 	s=','.join(args)
@@ -406,7 +480,14 @@ def c_functions():
 def c_udp_handler_args(fn):
 	args=[]
 	offset='4'
-	for p in sorted(fn.regs):
+
+	if fn.args:
+		regs=fn.args
+	else:
+		regs=sorted(fn.regs)
+		print 'WARNING: deprecated no-args fn',fn.name
+
+	for p in regs:
 		type = fn.types.get(p,'uint64_t')
 		args.append('({}*)(packet+{})'.format(type,offset))
 		offset=offset+'+sizeof({})'.format(type)
@@ -472,6 +553,7 @@ def compile():
 
 	c_decl_body(S.pro)
 	c_bands()
+	c_bundles()
 	c_pools()
 	c_declarations()
 	c_functions()
@@ -486,6 +568,7 @@ def generate_pool_fns():
 
 		fn=O()
 		fn.name=name
+		fn.args='a'
 		fn.regs={'a':True}
 		fn.locals={'A':True}
 		fn.types = {'a':p.type,'A':'uint64_t'}
@@ -493,6 +576,7 @@ def generate_pool_fns():
 		S.fn[fn.name]=fn
 
 		fn=O()
+		fn.args='ab'
 		fn.name=name+'_i';
 		fn.regs={'a':True,'b':True}
 		fn.locals={}
@@ -501,6 +585,7 @@ def generate_pool_fns():
 		S.fn[fn.name]=fn
 
 		fn=O()
+		fn.args='a'
 		fn.name=name+'_store'
 		fn.regs={'a':True}
 		fn.locals={'A':True}
@@ -509,6 +594,7 @@ def generate_pool_fns():
 		S.fn[fn.name]=fn
 
 		fn=O()
+		fn.args='ab'
 		fn.name=name+'_storei';
 		fn.regs={'a':True,'b':True}
 		fn.locals={}
@@ -517,6 +603,7 @@ def generate_pool_fns():
 		S.fn[fn.name]=fn
 
 		fn=O()
+		fn.args='a'
 		fn.name=name+'_size';
 		fn.regs={'a':True}
 		fn.locals={}
