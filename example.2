@@ -1,12 +1,12 @@
 
 module,rng
 
-pool,rng-state,1,uint32_t
+pool,state,1,uint32_t
 pool,bogus,17,uint32_t
-bundle,state,rng-state,bogus
+bundle,state,state,bogus
 
 
-fn,rng-stateless,x
+fn,stateless,x
 lit,48271UL,A
 lit,2147483647UL,B
 mul,Axx 
@@ -14,13 +14,13 @@ mod,xBx
 inc,x
 end
 
-fn,rng,a type,uint32_t,B
-rng-state,B mov,BA rng-stateless,A mov,Aa mov,AB
-rng-state-store,B
+fn,r,a type,uint32_t,B
+state,B mov,BA stateless,A mov,Aa mov,AB
+state-store,B
 end
 
 fn,f,a type,float,a
-rng,A mov,Aa
+r,A mov,Aa
 end
 
 module,star
