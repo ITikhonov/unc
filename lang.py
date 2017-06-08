@@ -183,13 +183,14 @@ def Wmodule(name):
 		m.name=name
 		m.fn={}
 		S.modules[m.name]=m
-	m.module=name
+	S.module=name
 
 def Wpool(name,size,type):
 	p=O()
 	p.name=name
 	p.size=size
 	p.type=type
+	p.module=S.module
 	assert p.name not in S.pool
 	S.pool[p.name]=p
 
@@ -601,6 +602,8 @@ def compile():
 def generate_pool_fns():
 	for p in S.pool.values():
 		name=p.name
+
+		S.module=p.module
 
 		fn=O()
 		fn.name=name
