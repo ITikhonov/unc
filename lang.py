@@ -10,6 +10,7 @@ class O:
 S=O()
 S.at = ''
 S.pool = {}
+S.fn = {}
 S.band = {}
 S.bundle = {}
 S.macros = {}
@@ -22,34 +23,21 @@ S.pack = {}
 
 S.module = 'main'
 
-m=O()
-m.name = 'main'
-m.fn={}
-
-S.modules={m.name:m}
 
 def register_fn(fn,name=None):
 	if name is None:
 		name=fn.name
-	m=S.modules[S.module]
 	fn.module=S.module
-	m.fn[name]=fn
-	print 'REG',name,m.name
+	S.fn[name]=fn
 
 
 def find_fn(name):
-	fn=None
-	for m in S.modules.values():
-		fn=m.fn.get(name,fn)
+	fn=S.fn.get(name)
 	print 'FIND_FN',name,fn
 	return fn
 
 def all_fns():
-	fns=[]
-	for m in S.modules.values():
-		fns.extend(m.fn.values())
-	fns.sort(key=lambda fn: fn.name)
-	return fns
+	return sorted(S.fn.values(), key=lambda fn: fn.name)
 	
 
 
@@ -177,12 +165,6 @@ def Cfetch(op,name,r):
 	c_output(s)
 
 def Wmodule(name):
-	m=S.modules.get(name)
-	if not m:
-		m=O()
-		m.name=name
-		m.fn={}
-		S.modules[m.name]=m
 	S.module=name
 
 def Wpool(name,size,type):
