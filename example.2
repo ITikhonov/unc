@@ -1,8 +1,12 @@
 
+module,star
+
 pool,star_x,65536,float
 pool,star_y,65536,float
 band,star,star_x,star_y
 pack,star
+
+module,rng
 
 pool,rng-state,1,uint32_t
 pool,bogus,17,uint32_t
@@ -26,6 +30,7 @@ fn,frng,a type,float,a
 rng,A mov,Aa
 end
 
+module,star
 
 fn,create,i type,float,A
 frng,A star-x-storei,Ai frng,A star-y-storei,Ai

@@ -12,7 +12,7 @@ S.at = ''
 S.pool = {}
 S.band = {}
 S.bundle = {}
-S.fn = {}
+S.macros = {}
 S.c_op = {}
 S.annex = O()
 S.annex.body=[]
@@ -20,9 +20,41 @@ S.pro = O()
 S.pro.body=[]
 S.pack = {}
 
+S.module = 'main'
+
+m=O()
+m.name = 'main'
+m.fn={}
+
+S.modules={m.name:m}
+
+def register_fn(fn,name=None):
+	if name is None:
+		name=fn.name
+	m=S.modules[S.module]
+	fn.module=S.module
+	m.fn[name]=fn
+	print 'REG',name,m.name
+
+
+def find_fn(name):
+	fn=None
+	for m in S.modules.values():
+		fn=m.fn.get(name,fn)
+	print 'FIND_FN',name,fn
+	return fn
+
+def all_fns():
+	fns=[]
+	for m in S.modules.values():
+		fns.extend(m.fn.values())
+	fns.sort(key=lambda fn: fn.name)
+	return fns
+	
+
+
 def c_name(name):
 	return name.replace('-','_')
-
 
 def Cc(op, line):
 	c_output(line+'\n')
@@ -144,6 +176,14 @@ def Cfetch(op,name,r):
 	s='\t{}[0]=pool_{}[0];\n'.format(r,name)
 	c_output(s)
 
+def Wmodule(name):
+	m=S.modules.get(name)
+	if not m:
+		m=O()
+		m.name=name
+		m.fn={}
+		S.modules[m.name]=m
+	m.module=name
 
 def Wpool(name,size,type):
 	p=O()
@@ -184,8 +224,8 @@ def Wfn(name,args=None):
 	p.args=args
 
 	S.current=p
-	assert p.name not in S.fn
-	S.fn[p.name]=p
+	assert find_fn(p.name) is None
+	register_fn(p)
 
 def Wc():
 	line, S.source=S.source.split('\n',1)
@@ -256,21 +296,22 @@ def fncall(name):
 	elif len(S.args)==0:
 		append('fncall', name)
 	else:
-		raise
+		raise Exception(name)
 
 
 def append(*args):
 	S.current.body.append(args)
 
-S.module=locals()
+S.builtin_locals=locals()
 
 
 def builtins():
-	for name,fn in S.module.items():
+	for name,fn in S.builtin_locals.items():
 		if not name.startswith('W'): continue
-		S.fn[name[1:]] = fn
+		fn.name=name[1:]
+		register_fn(fn)
 
-	for name,fn in S.module.items():
+	for name,fn in S.builtin_locals.items():
 		if not name.startswith('C'): continue
 		S.c_op[name[1:]] = fn
 
@@ -285,8 +326,8 @@ def register(*regs):
 
 
 def call():
-	f=S.fn.get(S.word)
-	if f is None or hasattr(f,'name'):
+	f=find_fn(S.word)
+	if f is None or hasattr(f,'body'):
 		fncall(S.word)
 	else:
 		apply(f,S.args)
@@ -300,11 +341,6 @@ def report():
 	print
 	print 'S:',S
 	print
-
-	for fn in S.fn.values():
-		if hasattr(fn,'name'):
-			print fn.name, fn.body
-
 
 
 def strip():
@@ -457,16 +493,16 @@ def c_decl_body(fn):
 		
 
 def c_declarations():
-	for p in S.fn.values():
+	for p in all_fns():
 		if not hasattr(p,'body'): continue
 		s="void {}(".format(c_name(p.name))
 		c_output(s)
 		c_decl_args(p)
-		c_output(');\n')
+		c_output('); // module {}\n'.format(p.module))
 
 
 def c_functions():
-	for p in S.fn.values():
+	for p in all_fns():
 		if not hasattr(p,'body'): continue
 
 		s="void {}(".format(c_name(p.name))
@@ -532,7 +568,7 @@ void udp_handler(void) {
 	c_output(s)
 
 	opcode=0
-	for p in S.fn.values():
+	for p in all_fns():
 		if not hasattr(p,'body'): continue
 		s="\t\tcase {}: {}(".format(opcode, c_name(p.name))
 		c_output(s)
@@ -573,7 +609,7 @@ def generate_pool_fns():
 		fn.locals={'A':True}
 		fn.types = {'a':p.type,'A':'uint64_t'}
 		fn.body=[('lit','0','A'),('fetchi',p.name,'a','A')]
-		S.fn[fn.name]=fn
+		register_fn(fn)
 
 		fn=O()
 		fn.args='ab'
@@ -582,7 +618,7 @@ def generate_pool_fns():
 		fn.locals={}
 		fn.types = {'a':p.type,'b':'uint64_t'}
 		fn.body=[('fetchi',p.name,'a','b')]
-		S.fn[fn.name]=fn
+		register_fn(fn)
 
 		fn=O()
 		fn.args='a'
@@ -591,7 +627,7 @@ def generate_pool_fns():
 		fn.locals={'A':True}
 		fn.types = {'a':p.type,'A':'uint64_t'}
 		fn.body=[('lit','0','A'),('storei',p.name,'a','A')]
-		S.fn[fn.name]=fn
+		register_fn(fn)
 
 		fn=O()
 		fn.args='ab'
@@ -600,7 +636,7 @@ def generate_pool_fns():
 		fn.locals={}
 		fn.types = {'a':p.type,'b':'uint64_t'}
 		fn.body=[('storei',p.name,'a','b')]
-		S.fn[fn.name]=fn
+		register_fn(fn)
 
 		fn=O()
 		fn.args='a'
@@ -609,7 +645,7 @@ def generate_pool_fns():
 		fn.locals={}
 		fn.types = {'a':'uint64_t'}
 		fn.body=[('lit',str(p.size),'a')]
-		S.fn[fn.name]=fn
+		register_fn(fn)
 
 
 
@@ -620,7 +656,7 @@ def generate():
 
 def temp_debug():
 	pprint.pprint(S.pool)
-	for n,v in S.fn.items():
+	for n,v in all_fns().items():
 		if hasattr(v,'body'):
 			pprint.pprint((n,v.regs.keys(),v.body))
 
@@ -630,7 +666,6 @@ def main():
 	S.files = sys.argv[2:]
 	parse()
 	generate()
-	temp_debug()
 	compile()
 
 
