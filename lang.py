@@ -17,8 +17,10 @@ S.bundle = {}
 S.c_op = {}
 S.annex = O()
 S.annex.body=[]
+S.annex.module='main'
 S.pro = O()
 S.pro.body=[]
+S.pro.module='main'
 S.pack = {}
 
 S.module = 'main'
@@ -30,10 +32,11 @@ def register_fn(fn):
 	S.fn[S.module+'@'+fn.name]=fn
 
 def find_fn(name):
+	print 'FIND_FN',name, S.c_module
 	fn=S.fn.get(name)
 	if not fn: return None
 
-	print 'FIND_FN',name,fn, fn.module
+	print 'FOND_FN',name,fn, fn.module
 	return fn
 
 def all_fns():
@@ -75,7 +78,13 @@ def Cif(op,r):
 	c_output(s)
 
 def Cfncall(op, func, *args):
-	func=c_name(func)
+	fn=find_fn(func)
+	if not fn:
+		fn=find_fn(S.c_module+'@'+func)
+	if not fn:
+		raise Exception('no function '+func)
+
+	func=fn.module+'_'+c_name(fn.name)
 	rs=[]
 	for r in args:
 		s='{}'.format(r)
@@ -455,7 +464,9 @@ def c_decl_locals(fn):
 
 
 def c_decl_body(fn):
+	S.c_module=fn.module
 	S.c_current_i=0
+	S.c_current_fn=fn
 	while True:
 		if S.c_current_i==len(fn.body): break
 		op=fn.body[S.c_current_i]
@@ -470,7 +481,7 @@ def c_decl_body(fn):
 		try:
 			apply(f,op)
 		except:
-			print 'Error at:',op
+			print 'Error at:',op,'in',getattr(fn,'name'),'module',S.c_module
 			raise
 
 		S.c_current_i+=1
@@ -479,7 +490,7 @@ def c_decl_body(fn):
 def c_declarations():
 	for p in all_fns():
 		if not hasattr(p,'body'): continue
-		s="void {}(".format(c_name(p.name))
+		s="void {}_{}(".format(c_name(p.module),c_name(p.name))
 		c_output(s)
 		c_decl_args(p)
 		c_output('); // module {}\n'.format(p.module))
@@ -489,7 +500,7 @@ def c_functions():
 	for p in all_fns():
 		if not hasattr(p,'body'): continue
 
-		s="void {}(".format(c_name(p.name))
+		s="void {}_{}(".format(c_name(p.module),c_name(p.name))
 		c_output(s)
 		c_decl_args(p)
 		c_output(') {\n')
@@ -554,7 +565,7 @@ void udp_handler(void) {
 	opcode=0
 	for p in all_fns():
 		if not hasattr(p,'body'): continue
-		s="\t\tcase {}: {}(".format(opcode, c_name(p.name))
+		s="\t\tcase {}: {}_{}(".format(opcode, c_name(p.module), c_name(p.name))
 		c_output(s)
 		c_udp_handler_args(p)
 		c_output('); break;\n')
@@ -599,7 +610,7 @@ def generate_pool_fns():
 
 		fn=O()
 		fn.args='ab'
-		fn.name=name+'_i';
+		fn.name=name+'-i';
 		fn.regs={'a':True,'b':True}
 		fn.locals={}
 		fn.types = {'a':p.type,'b':'uint64_t'}
@@ -608,7 +619,7 @@ def generate_pool_fns():
 
 		fn=O()
 		fn.args='a'
-		fn.name=name+'_store'
+		fn.name=name+'-store'
 		fn.regs={'a':True}
 		fn.locals={'A':True}
 		fn.types = {'a':p.type,'A':'uint64_t'}
@@ -617,7 +628,7 @@ def generate_pool_fns():
 
 		fn=O()
 		fn.args='ab'
-		fn.name=name+'_storei';
+		fn.name=name+'-storei';
 		fn.regs={'a':True,'b':True}
 		fn.locals={}
 		fn.types = {'a':p.type,'b':'uint64_t'}
@@ -626,7 +637,7 @@ def generate_pool_fns():
 
 		fn=O()
 		fn.args='a'
-		fn.name=name+'_size';
+		fn.name=name+'-size';
 		fn.regs={'a':True}
 		fn.locals={}
 		fn.types = {'a':'uint64_t'}

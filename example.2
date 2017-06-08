@@ -1,11 +1,4 @@
 
-module,star
-
-pool,star_x,65536,float
-pool,star_y,65536,float
-band,star,star_x,star_y
-pack,star
-
 module,rng
 
 pool,rng-state,1,uint32_t
@@ -26,31 +19,36 @@ rng-state,B mov,BA rng-stateless,A mov,Aa mov,AB
 rng-state-store,B
 end
 
-fn,frng,a type,float,a
+fn,f,a type,float,a
 rng,A mov,Aa
 end
 
 module,star
 
+pool,x,65536,float
+pool,y,65536,float
+band,star,x,y
+pack,star
+
 fn,create,i type,float,A
-frng,A star-x-storei,Ai frng,A star-y-storei,Ai
+rng@f,A x-storei,Ai rng@f,A y-storei,Ai
 c printf("CR %llu\n", *i);
 end
 
 fn,populate
-each,star_x,NI create,I
+each,x,NI create,I
 end
 
 fn,dump
 lit,0,A
-star-x-size,B
+x-size,B
 times,BI dumpone,I
 bye
 end
 
 
 fn,dumpone,i type,float,X type,float,Y
-star-x-i,Xi star-y-i,Yi
+x-i,Xi y-i,Yi
 c printf("%lli %0.2f %0.2f\n", *i, *X, *Y);
 end
 
@@ -60,5 +58,5 @@ c exit(0);
 
 pro #include <stdio.h>
 pro #include <stdlib.h>
-anx int main() { udp_setup(); populate(); dump(); for(;;) udp_handler(); }
+anx int main() { udp_setup(); star_populate(); star_dump(); for(;;) udp_handler(); }
 
