@@ -11,9 +11,9 @@ S=O()
 S.at = ''
 S.pool = {}
 S.fn = {}
+S.macro = {}
 S.band = {}
 S.bundle = {}
-S.macros = {}
 S.c_op = {}
 S.annex = O()
 S.annex.body=[]
@@ -24,16 +24,16 @@ S.pack = {}
 S.module = 'main'
 
 
-def register_fn(fn,name=None):
-	if name is None:
-		name=fn.name
+def register_fn(fn):
 	fn.module=S.module
-	S.fn[name]=fn
-
+	fn.scope=list(S.scope)
+	S.fn[S.module+'@'+fn.name]=fn
 
 def find_fn(name):
 	fn=S.fn.get(name)
-	print 'FIND_FN',name,fn
+	if not fn: return None
+
+	print 'FIND_FN',name,fn, fn.module
 	return fn
 
 def all_fns():
@@ -166,6 +166,7 @@ def Cfetch(op,name,r):
 
 def Wmodule(name):
 	S.module=name
+	S.scope=[]
 
 def Wpool(name,size,type):
 	p=O()
@@ -207,7 +208,6 @@ def Wfn(name,args=None):
 	p.args=args
 
 	S.current=p
-	assert find_fn(p.name) is None
 	register_fn(p)
 
 def Wc():
@@ -292,7 +292,7 @@ def builtins():
 	for name,fn in S.builtin_locals.items():
 		if not name.startswith('W'): continue
 		fn.name=name[1:]
-		register_fn(fn)
+		S.macro[fn.name]=fn
 
 	for name,fn in S.builtin_locals.items():
 		if not name.startswith('C'): continue
@@ -309,11 +309,12 @@ def register(*regs):
 
 
 def call():
-	f=find_fn(S.word)
-	if f is None or hasattr(f,'body'):
-		fncall(S.word)
-	else:
-		apply(f,S.args)
+	m=S.macro.get(S.word)
+	if m:
+		apply(m,S.args)
+		return
+
+	fncall(S.word)
 
 
 def report():
