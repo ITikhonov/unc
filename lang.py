@@ -490,7 +490,7 @@ def c_declarations():
 		s="void {}(".format(p.c_name)
 		c_output(s)
 		c_decl_args(p)
-		c_output(');')
+		c_output(');\n')
 
 
 def c_functions():
