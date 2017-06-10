@@ -31,7 +31,7 @@ band,star,x,y
 pack,star
 
 fn,create,i type,float,A
-rng@f,A x-storei,Ai rng@f,A y-storei,Ai
+f@rng,A x-storei,Ai f@rng,A y-storei,Ai
 c printf("CR %llu\n", *i);
 end
 
@@ -58,5 +58,5 @@ c exit(0);
 
 pro #include <stdio.h>
 pro #include <stdlib.h>
-anx int main() { udp_setup(); star_populate(); star_dump(); for(;;) udp_handler(); }
+anx int main() { udp_setup(); populate__from__star(); dump__from__star(); for(;;) udp_handler(); }
 

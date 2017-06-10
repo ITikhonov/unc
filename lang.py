@@ -29,7 +29,7 @@ S.module = 'main'
 def register_fn(fn):
 	fn.module=S.module
 	fn.scope=list(S.scope)
-	S.fn[S.module+'@'+fn.name]=fn
+	S.fn[fn.name+'@'+S.module]=fn
 
 def find_fn(name):
 	print 'FIND_FN',name, S.c_module
@@ -80,11 +80,11 @@ def Cif(op,r):
 def Cfncall(op, func, *args):
 	fn=find_fn(func)
 	if not fn:
-		fn=find_fn(S.c_module+'@'+func)
+		fn=find_fn(func+'@'+S.c_module)
 	if not fn:
 		raise Exception('no function '+func)
 
-	func=fn.module+'_'+c_name(fn.name)
+	func=fn.c_name
 	rs=[]
 	for r in args:
 		s='{}'.format(r)
@@ -490,17 +490,17 @@ def c_decl_body(fn):
 def c_declarations():
 	for p in all_fns():
 		if not hasattr(p,'body'): continue
-		s="void {}_{}(".format(c_name(p.module),c_name(p.name))
+		s="void {}(".format(p.c_name)
 		c_output(s)
 		c_decl_args(p)
-		c_output('); // module {}\n'.format(p.module))
+		c_output(');')
 
 
 def c_functions():
 	for p in all_fns():
 		if not hasattr(p,'body'): continue
 
-		s="void {}_{}(".format(c_name(p.module),c_name(p.name))
+		s="void {}(".format(p.c_name)
 		c_output(s)
 		c_decl_args(p)
 		c_output(') {\n')
@@ -565,7 +565,7 @@ void udp_handler(void) {
 	opcode=0
 	for p in all_fns():
 		if not hasattr(p,'body'): continue
-		s="\t\tcase {}: {}_{}(".format(opcode, c_name(p.module), c_name(p.name))
+		s="\t\tcase {}: {}(".format(opcode, p.c_name)
 		c_output(s)
 		c_udp_handler_args(p)
 		c_output('); break;\n')
@@ -592,6 +592,13 @@ def compile():
 	c_udp_handler()
 
 	c_decl_body(S.annex)
+
+def generate_c_names():
+	for fn in all_fns():
+		n=c_name(fn.name)
+		m=c_name(fn.module)
+		fn.c_name='{}__from__{}'.format(n,m)
+
 
 def generate_pool_fns():
 	for p in S.pool.values():
@@ -649,6 +656,7 @@ def generate_pool_fns():
 
 def generate():
 	generate_pool_fns()
+	generate_c_names()
 
 
 def temp_debug():
