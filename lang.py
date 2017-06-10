@@ -32,11 +32,8 @@ def register_fn(fn):
 	S.fn[fn.name+'@'+S.module]=fn
 
 def find_fn(name):
-	print 'FIND_FN',name, S.c_module
 	fn=S.fn.get(name)
 	if not fn: return None
-
-	print 'FOND_FN',name,fn, fn.module
 	return fn
 
 def all_fns():
