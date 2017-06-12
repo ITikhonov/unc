@@ -596,6 +596,12 @@ def generate_c_names():
 		m=c_name(fn.module)
 		fn.c_name='{}__from__{}'.format(n,m)
 
+def generate_pool_c_names():
+	for p in S.pool.values():
+		n=c_name(p.name)
+		m=c_name(p.module)
+		p.c_name='{}__from__{}'.format(n,m)
+		
 
 def generate_pool_fns():
 	for p in S.pool.values():
@@ -653,6 +659,7 @@ def generate_pool_fns():
 
 def generate():
 	generate_pool_fns()
+	generate_pool_c_names()
 	generate_c_names()
 
 
