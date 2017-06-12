@@ -132,14 +132,14 @@ def Cmov(op,s,d):
 	c_output(s)
 
 def Cstorei(op,name,r,i):
-	band=S.banded.get(name)
+	band=S.band.get(S.banded.get(name))
 	bundle=S.bundled.get(name)
 	p=S.pool.get(name)
 	assert p
 	assert not (band and bundle)
 	if band:
 		name=c_name(name)
-		s='\t{}[{}[0]].{}={}[0];\n'.format(band,i,name,r)
+		s='\t{}[{}[0]].{}={}[0];\n'.format(band.c_name,i,name,r)
 		c_output(s)
 	elif bundle:
 		name=c_name(name)
@@ -151,14 +151,14 @@ def Cstorei(op,name,r,i):
 		c_output(s)
 
 def Cfetchi(op,name,r,i):
-	band=S.banded.get(name)
+	band=S.band.get(S.banded.get(name))
 	bundle=S.bundled.get(name)
 	p=S.pool.get(name)
 	assert p
 	assert not (band and bundle)
 	if band:
 		name=c_name(name)
-		s='\t{}[0]={}[{}[0]].{};\n'.format(r,band,i,name)
+		s='\t{}[0]={}[{}[0]].{};\n'.format(r,band.c_name,i,name)
 		c_output(s)
 	elif bundle:
 		name=c_name(name)
@@ -195,6 +195,7 @@ def Wband(name,*ps):
 	p=O()
 	p.name=name
 	p.pools=ps
+	p.module=S.module
 	assert p.name not in S.band
 	S.band[p.name]=p
 
@@ -405,13 +406,13 @@ def c_bands():
 		if b.name in S.pack:
 			packing='__attribute__((__packed__)) '
 
-		s='struct {} {{\n'.format(c_name(b.name))
+		s='struct {} {{\n'.format(b.c_name)
 		c_output(s)
 		for p in ps:
 			S.banded[p.name]=b.name
 			s="\t{} {};\n".format(p.type,c_name(p.name))
 			c_output(s)
-		s='}} {}{}[{}];\n'.format(packing,c_name(b.name),size)
+		s='}} {}{}[{}];\n'.format(packing,b.c_name,size)
 		c_output(s)
 
 
@@ -605,6 +606,13 @@ def generate_pool_c_names():
 		n=c_name(p.name)
 		m=c_name(p.module)
 		p.c_name='pool_{}__from__{}'.format(n,m)
+
+def generate_band_c_names():
+	for p in S.band.values():
+		n=c_name(p.name)
+		m=c_name(p.module)
+		p.c_name='band_{}__from__{}'.format(n,m)
+		
 		
 
 def generate_pool_fns():
@@ -664,6 +672,7 @@ def generate_pool_fns():
 def generate():
 	generate_pool_fns()
 	generate_pool_c_names()
+	generate_band_c_names()
 	generate_c_names()
 
 
