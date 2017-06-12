@@ -134,6 +134,8 @@ def Cmov(op,s,d):
 def Cstorei(op,name,r,i):
 	band=S.banded.get(name)
 	bundle=S.bundled.get(name)
+	p=S.pool.get(name)
+	assert p
 	assert not (band and bundle)
 	if band:
 		name=c_name(name)
@@ -145,12 +147,14 @@ def Cstorei(op,name,r,i):
 		c_output(s)
 	else:
 		name=c_name(name)
-		s='\tpool_{}[{}[0]]={}[0];\n'.format(name,i,r)
+		s='\t{}[{}[0]]={}[0];\n'.format(p.c_name,i,r)
 		c_output(s)
 
 def Cfetchi(op,name,r,i):
 	band=S.banded.get(name)
 	bundle=S.bundled.get(name)
+	p=S.pool.get(name)
+	assert p
 	assert not (band and bundle)
 	if band:
 		name=c_name(name)
@@ -162,7 +166,7 @@ def Cfetchi(op,name,r,i):
 		c_output(s)
 	else:
 		name=c_name(name)
-		s='\t{}[0]=pool_{}[{}[0]];\n'.format(r,name,i)
+		s='\t{}[0]={}[{}[0]];\n'.format(r,p.c_name,i)
 		c_output(s)
 
 def Cfetch(op,name,r):
@@ -434,7 +438,7 @@ def c_pools():
 	for p in S.pool.values():
 		if p.name in S.banded: continue
 		if p.name in S.bundled: continue
-		s="{} pool_{}[{}];\n".format(p.type,c_name(p.name),p.size)
+		s="{} {}[{}];\n".format(p.type,p.c_name,p.size)
 		c_output(s)
 
 
@@ -600,7 +604,7 @@ def generate_pool_c_names():
 	for p in S.pool.values():
 		n=c_name(p.name)
 		m=c_name(p.module)
-		p.c_name='{}__from__{}'.format(n,m)
+		p.c_name='pool_{}__from__{}'.format(n,m)
 		
 
 def generate_pool_fns():
