@@ -133,7 +133,7 @@ def Cmov(op,s,d):
 
 def Cstorei(op,name,r,i):
 	band=S.band.get(S.banded.get(name))
-	bundle=S.bundled.get(name)
+	bundle=S.bundle.get(S.bundled.get(name))
 	p=S.pool.get(name)
 	assert p
 	assert not (band and bundle)
@@ -143,7 +143,7 @@ def Cstorei(op,name,r,i):
 		c_output(s)
 	elif bundle:
 		name=c_name(name)
-		s='\t{}.{}[{}[0]]={}[0];\n'.format(bundle,name,i,r)
+		s='\t{}.{}[{}[0]]={}[0];\n'.format(bundle.c_name,name,i,r)
 		c_output(s)
 	else:
 		name=c_name(name)
@@ -152,7 +152,7 @@ def Cstorei(op,name,r,i):
 
 def Cfetchi(op,name,r,i):
 	band=S.band.get(S.banded.get(name))
-	bundle=S.bundled.get(name)
+	bundle=S.bundle.get(S.bundled.get(name))
 	p=S.pool.get(name)
 	assert p
 	assert not (band and bundle)
@@ -162,7 +162,7 @@ def Cfetchi(op,name,r,i):
 		c_output(s)
 	elif bundle:
 		name=c_name(name)
-		s='\t{}[0]={}.{}[{}[0]];\n'.format(r,bundle,name,i)
+		s='\t{}[0]={}.{}[{}[0]];\n'.format(r,bundle.c_name,name,i)
 		c_output(s)
 	else:
 		name=c_name(name)
@@ -203,6 +203,7 @@ def Wbundle(name,*ps):
 	p=O()
 	p.name=name
 	p.pools=ps
+	p.module=S.module
 	assert p.name not in S.bundle
 	S.bundle[p.name]=p
 
@@ -425,13 +426,13 @@ def c_bundles():
 		if b.name in S.pack:
 			packing='__attribute__((__packed__)) '
 
-		s='struct {} {{\n'.format(c_name(b.name))
+		s='struct {} {{\n'.format(b.c_name)
 		c_output(s)
 		for p in ps:
 			S.bundled[p.name]=b.name
 			s="\t{} {}[{}];\n".format(p.type,c_name(p.name),p.size)
 			c_output(s)
-		s='}} {}{};\n'.format(packing,c_name(b.name))
+		s='}} {}{};\n'.format(packing,b.c_name)
 		c_output(s)
 
 
@@ -613,6 +614,13 @@ def generate_band_c_names():
 		m=c_name(p.module)
 		p.c_name='band_{}__from__{}'.format(n,m)
 		
+def generate_bundle_c_names():
+	for p in S.bundle.values():
+		n=c_name(p.name)
+		m=c_name(p.module)
+		p.c_name='bundle_{}__from__{}'.format(n,m)
+		
+		
 		
 
 def generate_pool_fns():
@@ -673,6 +681,7 @@ def generate():
 	generate_pool_fns()
 	generate_pool_c_names()
 	generate_band_c_names()
+	generate_bundle_c_names()
 	generate_c_names()
 
 
