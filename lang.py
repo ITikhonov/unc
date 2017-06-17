@@ -28,7 +28,6 @@ S.module = 'main'
 
 def register_fn(fn):
 	fn.module=S.module
-	fn.scope=list(S.scope)
 	S.fn[fn.name+'@'+S.module]=fn
 
 def find_fn(name):
@@ -176,7 +175,6 @@ def Cfetch(op,name,r):
 
 def Wmodule(name):
 	S.module=name
-	S.scope=[]
 
 def Wpool(name,size,type):
 	p=O()
@@ -259,7 +257,14 @@ def Wtimesn(*_): simple()
 def Weach(pool,regs):
 	register(*regs)
 	rn,ri=regs
-	append('fncall',pool+'-size',rn)
+
+	if '@' in pool:
+		name,module=pool.split('@',1)
+		pool_size='{}-size@{}'.format(name,module)
+	else:
+		pool_size=pool+'-size'
+
+	append('fncall',pool_size,rn)
 	append('times',rn,ri)
 
 
@@ -374,6 +379,7 @@ def parse():
 	builtins()
 	for f in S.files:
 		S.source=open(f).read()
+		S.module='main'
 		parse_one()
 
 
