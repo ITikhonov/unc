@@ -176,7 +176,7 @@ def Cfetch(op,name,r):
 def Wmodule(name):
 	S.module=name
 
-def Wpool(name,size,type):
+def Wpool(name,type,size=1):
 	p=O()
 	p.name=name
 	p.size=size
@@ -406,8 +406,7 @@ def c_bands():
 	for b in S.band.values():
 		ps=[S.pool[x] for x in b.pools]
 		sizes=[x.size for x in ps]
-		size=sizes[0]
-		assert sizes.count(size)==len(sizes)
+		size=max(sizes)
 
 		packing=''
 		if b.name in S.pack:
@@ -416,6 +415,7 @@ def c_bands():
 		s='struct {} {{\n'.format(b.c_name)
 		c_output(s)
 		for p in ps:
+			p.size=size
 			S.banded[p.name]=b.name
 			s="\t{} {};\n".format(p.type,c_name(p.name))
 			c_output(s)
@@ -677,7 +677,7 @@ def generate_pool_fns():
 		fn.regs={'a':True}
 		fn.locals={}
 		fn.types = {'a':'uint64_t'}
-		fn.body=[('lit',str(p.size),'a')]
+		fn.body=[('size',p.name,'a')]
 		register_fn(fn)
 
 

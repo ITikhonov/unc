@@ -1,10 +1,10 @@
 
 module,rng
 
-pool,state,1,uint32_t
-pool,bogus,17,uint32_t
+pool,state,uint32_t
+pool,bogus,uint32_t,17
 bundle,state,state,bogus
-pool,simple,1,float
+pool,simple,float,1
 
 
 fn,stateless,x
@@ -26,8 +26,8 @@ end
 
 module,star
 
-pool,x,65536,float
-pool,y,65536,float
+pool,x,float,65536
+pool,y,float
 band,star,x,y
 pack,star
 
