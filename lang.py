@@ -248,7 +248,6 @@ def Winc(*_): simple()
 def Wlt(*_): simple()
 def Weq(*_): simple()
 def Wret(*_): simple()
-def Wsize(*_): simple()
 def Wloop(*_): simple()
 def Wif(*_): simple()
 def Wtimes(*_): simple()
@@ -412,7 +411,7 @@ def c_bands():
 		if b.name in S.pack:
 			packing='__attribute__((__packed__)) '
 
-		s='struct {} {{\n'.format(b.c_name)
+		s='{}struct {} {{\n'.format(b.c_storage,b.c_name)
 		c_output(s)
 		for p in ps:
 			p.size=size
@@ -432,7 +431,7 @@ def c_bundles():
 		if b.name in S.pack:
 			packing='__attribute__((__packed__)) '
 
-		s='struct {} {{\n'.format(b.c_name)
+		s='{}struct {} {{\n'.format(b.c_storage,b.c_name)
 		c_output(s)
 		for p in ps:
 			S.bundled[p.name]=b.name
@@ -446,7 +445,7 @@ def c_pools():
 	for p in S.pool.values():
 		if p.name in S.banded: continue
 		if p.name in S.bundled: continue
-		s="{} {}[{}];\n".format(p.type,p.c_name,p.size)
+		s="{}{} {}[{}];\n".format(p.c_storage,p.type,p.c_name,p.size)
 		c_output(s)
 
 
@@ -499,7 +498,7 @@ def c_decl_body(fn):
 def c_declarations():
 	for p in all_fns():
 		if not hasattr(p,'body'): continue
-		s="void {}(".format(p.c_name)
+		s="{}void {}(".format(p.c_storage,p.c_name)
 		c_output(s)
 		c_decl_args(p)
 		c_output(');\n')
@@ -509,7 +508,7 @@ def c_functions():
 	for p in all_fns():
 		if not hasattr(p,'body'): continue
 
-		s="void {}(".format(p.c_name)
+		s="{}void {}(".format(p.c_storage,p.c_name)
 		c_output(s)
 		c_decl_args(p)
 		c_output(') {\n')
@@ -553,11 +552,15 @@ int udp_socket[1]; void udp_setup(void) {{
 
 	s="""
 void udp_handler(void) {
+	struct timeval tv;
 	fd_set fds;
 	FD_ZERO(&fds);
 	FD_SET(udp_socket[0],&fds);
-	int ret=select(udp_socket[0]+1,&fds,0,0,0);
+	tv.tv_sec=0;
+	tv.tv_usec=0;
+	int ret=select(udp_socket[0]+1,&fds,0,0,&tv);
 	if(ret==0) return;
+	if(ret==-1) {perror("udp"); return; }
 
 	
 	uint8_t packet[65535];
@@ -606,24 +609,28 @@ def generate_c_names():
 	for fn in all_fns():
 		n=c_name(fn.name)
 		m=c_name(fn.module)
+		fn.c_storage='static '
 		fn.c_name='{}__from__{}'.format(n,m)
 
 def generate_pool_c_names():
 	for p in S.pool.values():
 		n=c_name(p.name)
 		m=c_name(p.module)
+		p.c_storage='static '
 		p.c_name='pool_{}__from__{}'.format(n,m)
 
 def generate_band_c_names():
 	for p in S.band.values():
 		n=c_name(p.name)
 		m=c_name(p.module)
+		p.c_storage='static '
 		p.c_name='band_{}__from__{}'.format(n,m)
 		
 def generate_bundle_c_names():
 	for p in S.bundle.values():
 		n=c_name(p.name)
 		m=c_name(p.module)
+		p.c_storage='static '
 		p.c_name='bundle_{}__from__{}'.format(n,m)
 		
 		
