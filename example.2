@@ -7,21 +7,21 @@ bundle,state,state,bogus
 pool,simple,float,1
 
 
-fn,stateless,x
+fn,stateless,X
 lit,48271UL,A
 lit,2147483647UL,B
-mul,Axx 
-mod,xBx
-inc,x
+mul,AXX 
+mod,XBX
+inc,X
 end
 
-fn,r,a type,uint32_t,B
-state,B mov,BA stateless,A mov,Aa mov,AB
+fn,r,R type,uint32_t,B
+state,B mov,BA stateless,A mov,AR mov,AB
 state-store,B
 end
 
-fn,f,a type,float,a
-r,A mov,Aa
+fn,f,F type,float,F
+r,A mov,AF
 end
 
 module,star
@@ -31,9 +31,9 @@ pool,y,float
 band,star,x,y
 pack,star
 
-fn,create,i type,float,A
-f@rng,A x-storei,Ai f@rng,A y-storei,Ai
-c printf("CR %llu\n", *i);
+fn,create,I type,float,A
+f@rng,A x-storei,AI f@rng,A y-storei,AI
+c printf("CR %llu\n", *I);
 end
 
 fn,populate
@@ -48,9 +48,9 @@ bye
 end
 
 
-fn,dumpone,i type,float,X type,float,Y
-x-i,Xi y-i,Yi
-c printf("%lli %0.2f %0.2f\n", *i, *X, *Y);
+fn,dumpone,I type,float,X type,float,Y
+x-i,XI y-i,YI
+c printf("%lli %0.2f %0.2f\n", *I, *X, *Y);
 end
 
 fn,bye

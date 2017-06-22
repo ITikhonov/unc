@@ -215,7 +215,7 @@ def Wfn(name,args=None):
 	p.locals={}
 	p.types = {}
 	p.body=[]
-	p.args=args
+	p.args=args if args else ''
 
 	S.current=p
 	register_fn(p)
@@ -467,6 +467,10 @@ def c_decl_args(fn):
 
 def c_decl_locals(fn):
 	for p in sorted(fn.locals):
+		print fn
+		print
+		if p in fn.args:
+			continue
 		type = fn.types.get(p,'uint64_t')
 		c_output('\t{} {}[1];\n'.format(type,p))
 
