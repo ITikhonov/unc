@@ -318,7 +318,7 @@ def builtins():
 def register(*regs):
 	for r in regs:
 		if r.islower():
-			S.current.regs[r] = True
+			raise Exception('old-style registers')
 		else:
 			S.current.locals[r] = True
 
