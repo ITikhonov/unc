@@ -8,7 +8,6 @@ class O:
 		return 'O{'+str(_.__dict__)
 
 S=O()
-S.at = ''
 S.pool = {}
 S.fn = {}
 S.macro = {}
@@ -318,7 +317,9 @@ def builtins():
 def register(*regs):
 	for r in regs:
 		if r.islower():
-			raise Exception('old-style registers')
+			print 'Warning: old-style registers'
+			report(True)
+			S.current.locals[r] = True
 		else:
 			S.current.locals[r] = True
 
@@ -333,14 +334,22 @@ def call():
 	fncall(S.word)
 
 
-def report():
-	S.source = S.source[:64]
-	S.at = S.at[:64]
-	print 'Line:',S.line.split('\n',1)[0]
-	print 'At:',S.at.split('\n',1)[0]
+def lineno():
+	l=len(S.line)
+	pre=S.source_full[:-l]
+	return len(pre.split('\n'))
+
+
+def report(short=True):
+	ln=lineno()
+	text=S.line.split('\n',1)[0]
+
+
+	print 'File: {}:{}: {}'.format(S.current_file,ln,text)
 	print
-	print 'S:',S
-	print
+	if not short:
+		print 'S:',S
+		print
 
 
 def strip():
@@ -350,18 +359,15 @@ def strip():
 		if c in ' \t':
 			continue
 		if c in '\n':
-			S.line = S.source[1:]
-			line = True
 			continue
 		break
 		
 	S.source=S.source[i:]
-	S.at = S.source
-	S.endline = line
 
 
 def token():
 	strip()
+	S.line = S.source
 	for i in range(len(S.source)):
 		c=S.source[i]
 		if c in ' \n\t':
@@ -377,14 +383,15 @@ def token():
 def parse():
 	builtins()
 	for f in S.files:
+		S.current_file=f
 		S.source=open(f).read()
+		S.source_full=S.source
 		S.module='main'
 		parse_one()
 
 
 def parse_one():
 	S.line = S.source
-	S.at = S.source
 	try:
 		while True:
 			token()
@@ -467,8 +474,6 @@ def c_decl_args(fn):
 
 def c_decl_locals(fn):
 	for p in sorted(fn.locals):
-		print fn
-		print
 		if p in fn.args:
 			continue
 		type = fn.types.get(p,'uint64_t')
